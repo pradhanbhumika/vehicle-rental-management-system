@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — RentWheels{% endblock %}
+
+{% block extra_css %}
+<style>
+.db-hero {
+  background: linear-gradient(135deg, var(--navy) 0%, #1e3a8a 60%, #1d4ed8 100%);
+  padding: 34px 24px; border-bottom: 1px solid var(--border);
+}
+.dbh { max-width:1240px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; }
+.dbh h1 { font-size:26px; font-weight:900; color:#fff; letter-spacing:-0.4px; }
+.dbh p  { color:rgba(255,255,255,0.5); font-size:14px; margin-top:3px; }
+
+/* KPI GRID */
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:16px; margin-bottom:24px; }
+.kpi {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 20px 22px 18px;
+  position: relative; overflow: hidden; box-shadow: var(--shadow-sm);
+  transition: transform 0.22s;
+}
+.kpi:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius:var(--r) var(--r) 0 0; }
+.kpi.k-blue::before   { background:linear-gradient(90deg,var(--blue),#60a5fa); }
+.kpi.k-teal::before   { background:linear-gradient(90deg,var(--teal),#5eead4); }
+.kpi.k-amber::before  { background:linear-gradient(90deg,var(--amber),#fbbf24); }
+.kpi.k-purple::before { background:linear-gradient(90deg,#7c3aed,#a78bfa); }
+
+.kpi-ic { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:13px; }
+.kpi.k-blue   .kpi-ic { background:var(--blue-lt); }
+.kpi.k-teal   .kpi-ic { background:var(--teal-lt); }
+.kpi.k-amber  .kpi-ic { background:var(--amber-lt); }
+.kpi.k-purple .kpi-ic { background:#ede9fe; }
+
+.kpi-lbl { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--muted); margin-bottom:5px; }
+.kpi-val { font-size:32px; font-weight:900; letter-spacing:-1px; line-height:1; margin-bottom:3px; }
+.kpi.k-blue   .kpi-val { color:var(--blue); }
+.kpi.k-teal   .kpi-val { color:var(--teal); }
+.kpi.k-amber  .kpi-val { color:var(--amber); }
+.kpi.k-purple .kpi-val { color:#7c3aed; }
+.kpi-sub { font-size:12px; color:var(--muted); }
+
+/* BOTTOM GRID */
+.db-bottom { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+@media (max-width:720px) { .db-bottom { grid-template-columns:1fr; } }
+.db-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:20px; box-shadow:var(--shadow-sm); }
+.dbc-title { font-size:14px; font-weight:900; margin-bottom:16px; display:flex; align-items:center; gap:8px; letter-spacing:-0.2px; }
+
+/* VEHICLE BREAKDOWN */
+.vb-item { padding:10px 0; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+.vb-item:last-child { border-bottom:none; }
+.vb-info { flex:1; }
+.vb-name  { font-size:13px; font-weight:800; }
+.vb-count { font-size:12px; color:var(--muted); }
+.vb-bar-bg { height:4px; background:var(--border); border-radius:4px; overflow:hidden; margin-top:5px; }
+.vb-bar-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,var(--blue),#60a5fa); }
+.vb-rev { font-size:13px; font-weight:900; color:var(--blue); white-space:nowrap; }
+
+/* RECENT */
+.rc-item { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+.rc-item:last-child { border-bottom:none; }
+.rc-av {
+  width:34px; height:34px; border-radius:50%;
+  background:linear-gradient(135deg,var(--blue),#60a5fa);
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:900; color:#fff; flex-shrink:0;
+}
+.rc-name { font-size:13px; font-weight:800; }
+.rc-veh  { font-size:12px; color:var(--muted); }
+.rc-amt  { font-size:13px; font-weight:900; color:var(--teal); margin-left:auto; }
+
+.empty-inline { color:var(--muted); font-size:14px; padding:14px 0; text-align:center; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="db-hero">
+  <div class="dbh">
+    <div>
+      <h1>📊 Dashboard</h1>
+      <p>Business performance at a glance</p>
+    </div>
+    <a href="/bookings" class="btn btn-ghost btn-sm"><i class="fa fa-list"></i> All Bookings</a>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="kpi k-blue">
+      <div class="kpi-ic">📋</div>
+      <div class="kpi-lbl">Total Bookings</div>
+      <div class="kpi-val">{{ stats.total }}</div>
+      <div class="kpi-sub">All time bookings</div>
+    </div>
+    <div class="kpi k-teal">
+      <div class="kpi-ic">💰</div>
+      <div class="kpi-lbl">Total Revenue</div>
+      <div class="kpi-val">₹{{ "{:,}".format(stats.revenue|int) }}</div>
+      <div class="kpi-sub">All time earnings</div>
+    </div>
+    <div class="kpi k-amber">
+      <div class="kpi-ic">📈</div>
+      <div class="kpi-lbl">Avg. Per Booking</div>
+      <div class="kpi-val">
+        {% if stats.total > 0 %}₹{{ "{:,}".format((stats.revenue / stats.total)|int) }}
+        {% else %}₹0{% endif %}
+      </div>
+      <div class="kpi-sub">Average booking value</div>
+    </div>
+    <div class="kpi k-purple">
+      <div class="kpi-ic">🚗</div>
+      <div class="kpi-lbl">Fleet Size</div>
+      <div class="kpi-val">{{ fleet.fleet }}</div>
+      <div class="kpi-sub">Vehicles available</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="db-bottom">
+
+    <!-- VEHICLE STATS -->
+    <div class="db-card">
+      <div class="dbc-title"><i class="fa fa-car" style="color:var(--blue)"></i> Vehicle Performance</div>
+      {% if vstats %}
+        {% set mx = vstats[0].cnt if vstats[0].cnt > 0 else 1 %}
+        {% for vs in vstats %}
+        <div class="vb-item">
+          <div class="vb-info">
+            <div class="vb-name">{{ vs.name }}</div>
+            <div class="vb-count">
+              <span class="badge {% if vs.type == 'Bike' %}badge-blue{% else %}badge-teal{% endif %}">{{ vs.type }}</span>
+              &nbsp;{{ vs.cnt }} booking{% if vs.cnt != 1 %}s{% endif %}
+            </div>
+            <div class="vb-bar-bg">
+              <div class="vb-bar-fill" style="width:{{ ((vs.cnt / mx) * 100)|int }}%"></div>
+            </div>
+          </div>
+          <div class="vb-rev">₹{{ "{:,}".format(vs.revenue|int) }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-inline">No data yet.</div>
+      {% endif %}
+    </div>
+
+    <!-- RECENT BOOKINGS -->
+    <div class="db-card">
+      <div class="dbc-title"><i class="fa fa-clock" style="color:var(--teal)"></i> Recent Bookings</div>
+      {% if recent %}
+        {% for r in recent %}
+        <div class="rc-item">
+          <div class="rc-av">{{ r.name[0]|upper }}</div>
+          <div>
+            <div class="rc-name">{{ r.name }}</div>
+            <div class="rc-veh">{{ r.vehicle_name }}</div>
+          </div>
+          <div class="rc-amt">₹{{ "{:,}".format(r.total_cost|int) }}</div>
+        </div>
+        {% endfor %}
+        <div style="margin-top:14px;text-align:center">
+          <a href="/bookings" class="btn btn-ghost btn-sm"><i class="fa fa-arrow-right"></i> View All</a>
+        </div>
+      {% else %}
+        <div class="empty-inline">No bookings yet.</div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

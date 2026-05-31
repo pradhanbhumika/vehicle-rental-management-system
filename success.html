@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Booking Confirmed — RentWheels{% endblock %}
+
+{% block extra_css %}
+<style>
+.success-page { max-width: 560px; margin: 0 auto; padding: 60px 24px; text-align: center; }
+.pulse {
+  width: 88px; height: 88px; border-radius: 50%;
+  background: var(--green-lt); border: 2px solid #86efac;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 44px; margin-bottom: 24px;
+  animation: pulse 2.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(22,163,74,0.25); }
+  50%      { box-shadow: 0 0 0 18px rgba(22,163,74,0); }
+}
+.sp-h1 { font-size: 28px; font-weight: 900; letter-spacing: -0.4px; margin-bottom: 7px; }
+.sp-sub { color: var(--muted); font-size: 15px; margin-bottom: 10px; }
+.ref {
+  display: inline-block; padding: 5px 16px;
+  background: var(--amber-lt); border: 1px solid #fcd34d;
+  border-radius: 20px; color: var(--amber);
+  font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700;
+  margin-bottom: 30px;
+}
+.confirm-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); text-align: left;
+  margin-bottom: 26px;
+}
+.cc-img { width: 100%; height: 190px; object-fit: cover; display: block; }
+.cc-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 14px;
+}
+.cc-row:last-of-type { border-bottom: none; }
+.cc-lbl { color: var(--muted); }
+.cc-val { font-weight: 800; }
+.cc-total {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--blue-lt), var(--teal-lt));
+  border-top: 2px solid rgba(37,99,235,0.18);
+}
+.cc-total-lbl { font-weight: 900; }
+.cc-total-val { font-size: 26px; font-weight: 900; color: var(--blue); letter-spacing: -0.5px; }
+.action-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="success-page">
+  <div class="pulse">✅</div>
+  <h1 class="sp-h1">Booking Confirmed!</h1>
+  <p class="sp-sub">Payment received. Your vehicle is reserved.</p>
+  <div class="ref">Booking #{{ booking.booking_id }}</div>
+
+  <div class="confirm-card">
+    <img class="cc-img" src="{{ booking.vehicle_img }}" alt="{{ booking.vehicle_name }}"/>
+    <div>
+      <div class="cc-row"><span class="cc-lbl">Customer</span><span class="cc-val">{{ booking.name }}</span></div>
+      <div class="cc-row"><span class="cc-lbl">Phone</span><span class="cc-val">{{ booking.phone }}</span></div>
+      <div class="cc-row"><span class="cc-lbl">Vehicle</span><span class="cc-val">{{ booking.vehicle_name }}</span></div>
+      <div class="cc-row">
+        <span class="cc-lbl">Type</span>
+        <span class="badge {% if booking.vehicle_type == 'Bike' %}badge-blue{% else %}badge-teal{% endif %}">{{ booking.vehicle_type }}</span>
+      </div>
+      <div class="cc-row">
+        <span class="cc-lbl">Dates</span>
+        <span class="cc-val" style="font-family:'Space Mono',monospace;font-size:12px;">
+          {{ booking.from_date }} → {{ booking.to_date }}
+        </span>
+      </div>
+      <div class="cc-row"><span class="cc-lbl">Duration</span><span class="cc-val">{{ booking.num_days }} day{% if booking.num_days > 1 %}s{% endif %}</span></div>
+      <div class="cc-total">
+        <span class="cc-total-lbl">Total Paid</span>
+        <span class="cc-total-val">₹{{ "{:,}".format(booking.total_cost|int) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-row">
+    <a href="/"          class="btn btn-primary"><i class="fa fa-plus"></i> New Booking</a>
+    <a href="/bookings"  class="btn btn-ghost"><i class="fa fa-list"></i> All Bookings</a>
+    <a href="/dashboard" class="btn btn-ghost"><i class="fa fa-chart-bar"></i> Dashboard</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', ()=> {
+  setTimeout(()=> showToast('🎉 Booking confirmed!', 'success'), 300);
+});
+</script>
+{% endblock %}

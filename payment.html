@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+{% block title %}Payment — RentWheels{% endblock %}
+
+{% block extra_css %}
+<style>
+.pay-wrap { max-width: 860px; margin: 0 auto; padding: 40px 24px; }
+.pay-grid {
+  display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start;
+}
+@media (max-width: 760px) { .pay-grid { grid-template-columns: 1fr; } }
+
+/* ORDER SUMMARY */
+.order-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow);
+}
+.oc-img { width: 100%; height: 170px; object-fit: cover; display: block; }
+.oc-body { padding: 18px; }
+.oc-title {
+  font-size: 14px; font-weight: 900; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.oc-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.oc-row:last-of-type { border-bottom: none; }
+.oc-lbl { color: var(--muted); }
+.oc-total {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 16px; margin-top: 10px;
+  background: var(--blue-lt); border: 1px solid rgba(37,99,235,0.18); border-radius: 10px;
+}
+.oc-total-val { font-size: 24px; font-weight: 900; color: var(--blue); letter-spacing: -0.4px; }
+
+/* PAYMENT CARD */
+.pay-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 26px; box-shadow: var(--shadow);
+}
+.pay-title {
+  font-size: 17px; font-weight: 900; margin-bottom: 22px;
+  display: flex; align-items: center; gap: 9px; letter-spacing: -0.2px;
+}
+
+/* VIRTUAL CARD DISPLAY */
+.vcd {
+  background: linear-gradient(135deg, #0f1845 0%, #1e3a8a 60%, #2563eb 100%);
+  border-radius: 14px; padding: 20px 22px;
+  margin-bottom: 22px; position: relative; overflow: hidden; min-height: 150px;
+}
+.vcd::before {
+  content: ''; position: absolute; top: -30px; right: -30px;
+  width: 160px; height: 160px; border-radius: 50%;
+  background: rgba(96,165,250,0.12);
+}
+.vcd::after {
+  content: ''; position: absolute; bottom: -40px; left: -20px;
+  width: 130px; height: 130px; border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+}
+.vcd-chip {
+  width: 36px; height: 27px;
+  background: linear-gradient(135deg, #ca8a04, #fbbf24);
+  border-radius: 5px; margin-bottom: 14px;
+}
+.vcd-num {
+  font-family: 'Space Mono', monospace; font-size: 16px;
+  letter-spacing: 3px; color: rgba(255,255,255,0.85); margin-bottom: 14px;
+}
+.vcd-bottom { display: flex; justify-content: space-between; }
+.vcd-field .vcd-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.4); margin-bottom: 2px; }
+.vcd-field .vcd-val { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.85); }
+.vcd-brand { position: absolute; top: 16px; right: 20px; font-size: 26px; opacity: 0.7; }
+
+/* CARD NUMBER SEGMENTS */
+.segs { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-bottom: 14px; }
+.seg {
+  text-align: center; letter-spacing: 3px; font-size: 17px;
+  padding: 10px 6px; background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: 'Space Mono', monospace; outline: none;
+  transition: border-color 0.17s, box-shadow 0.17s;
+}
+.seg:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-gl); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.secure-strip {
+  display: flex; align-items: center; gap: 9px; margin-top: 16px;
+  padding: 10px 13px;
+  background: var(--teal-lt); border: 1px solid rgba(13,148,136,0.2); border-radius: 9px;
+  font-size: 12px; color: var(--text2);
+}
+.secure-strip i { color: var(--teal); }
+
+/* PROCESSING OVERLAY */
+.overlay {
+  display: none; position: fixed; inset: 0; z-index: 9000;
+  background: rgba(15,24,69,0.88); backdrop-filter: blur(8px);
+  flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+}
+.overlay.on { display: flex; }
+.spinner {
+  width: 60px; height: 60px; border-radius: 50%;
+  border: 4px solid var(--border); border-top-color: var(--blue);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.ov-h  { font-size: 20px; font-weight: 900; color: #fff; }
+.ov-s  { font-size: 14px; color: rgba(255,255,255,0.55); }
+.steps { display: flex; flex-direction: column; gap: 9px; margin-top: 6px; }
+.step-row { display: flex; align-items: center; gap: 10px; font-size: 13px; color: rgba(255,255,255,0.45); }
+.step-row.done { color: #6ee7b7; }
+.step-dot {
+  width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; flex-shrink: 0;
+}
+.step-row.done .step-dot { background: #059669; border-color: #059669; color: #fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- PROCESSING OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="spinner"></div>
+  <div class="ov-h">Processing Payment…</div>
+  <div class="ov-s">Please do not close this page</div>
+  <div class="steps">
+    <div class="step-row" id="st1"><div class="step-dot">1</div> Verifying card…</div>
+    <div class="step-row" id="st2"><div class="step-dot">2</div> Contacting bank…</div>
+    <div class="step-row" id="st3"><div class="step-dot">3</div> Confirming booking…</div>
+  </div>
+</div>
+
+<div class="pay-wrap">
+  <div style="margin-bottom:18px;">
+    <a href="/" class="btn btn-ghost btn-sm"><i class="fa fa-arrow-left"></i> Back</a>
+  </div>
+
+  <div class="pay-grid">
+
+    <!-- PAYMENT FORM -->
+    <div class="pay-card">
+      <div class="pay-title"><i class="fa fa-credit-card" style="color:var(--blue)"></i> Secure Card Payment</div>
+
+      <!-- VIRTUAL CARD -->
+      <div class="vcd">
+        <div class="vcd-brand" id="vcdBrand">💳</div>
+        <div class="vcd-chip"></div>
+        <div class="vcd-num" id="vcdNum">•••• &nbsp;•••• &nbsp;•••• &nbsp;••••</div>
+        <div class="vcd-bottom">
+          <div class="vcd-field">
+            <div class="vcd-lbl">Holder</div>
+            <div class="vcd-val" id="vcdHolder">YOUR NAME</div>
+          </div>
+          <div class="vcd-field">
+            <div class="vcd-lbl">Expires</div>
+            <div class="vcd-val" id="vcdExp">MM/YY</div>
+          </div>
+        </div>
+      </div>
+
+      <form method="POST" action="/payment" id="payForm">
+        <!-- Card Number -->
+        <div class="form-group">
+          <label class="form-label">Card Number</label>
+          <div class="segs">
+            <input class="seg" type="text" maxlength="4" placeholder="1234" id="g1" oninput="sync();tab(this,'g2')"/>
+            <input class="seg" type="text" maxlength="4" placeholder="5678" id="g2" oninput="sync();tab(this,'g3')"/>
+            <input class="seg" type="text" maxlength="4" placeholder="9012" id="g3" oninput="sync();tab(this,'g4')"/>
+            <input class="seg" type="text" maxlength="4" placeholder="3456" id="g4" oninput="sync()"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Cardholder Name</label>
+          <input class="form-input" type="text" id="holder" placeholder="Name on card" oninput="sync()"/>
+        </div>
+
+        <div class="two-col">
+          <div class="form-group">
+            <label class="form-label">Expiry</label>
+            <input class="form-input" type="text" id="expiry" placeholder="MM/YY" maxlength="5" oninput="fmtExp(this);sync()"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">CVV</label>
+            <input class="form-input" type="password" placeholder="•••" maxlength="3"/>
+          </div>
+        </div>
+
+        <div class="secure-strip">
+          <i class="fa fa-lock"></i> 256-bit SSL encrypted · No real payment processed
+        </div>
+
+        <button type="button" class="btn btn-teal btn-lg"
+                style="width:100%;justify-content:center;margin-top:18px;"
+                onclick="pay()">
+          <i class="fa fa-check-circle"></i>
+          Pay ₹{{ "{:,}".format(pending.total_cost|int) }}
+        </button>
+      </form>
+    </div>
+
+    <!-- ORDER SUMMARY -->
+    <div class="order-card">
+      <img class="oc-img" src="{{ pending.vehicle_img }}" alt="{{ pending.vehicle_name }}"/>
+      <div class="oc-body">
+        <div class="oc-title"><i class="fa fa-receipt" style="color:var(--teal)"></i> Order Summary</div>
+        <div class="oc-row"><span class="oc-lbl">Name</span><span><strong>{{ pending.name }}</strong></span></div>
+        <div class="oc-row"><span class="oc-lbl">Phone</span><span>{{ pending.phone }}</span></div>
+        <div class="oc-row"><span class="oc-lbl">Vehicle</span><span>{{ pending.vehicle_name }}</span></div>
+        <div class="oc-row">
+          <span class="oc-lbl">Type</span>
+          <span class="badge {% if pending.vehicle_type == 'Bike' %}badge-blue{% else %}badge-teal{% endif %}">{{ pending.vehicle_type }}</span>
+        </div>
+        <div class="oc-row"><span class="oc-lbl">From</span><span style="font-family:'Space Mono',monospace;font-size:12px">{{ pending.from_date }}</span></div>
+        <div class="oc-row"><span class="oc-lbl">To</span><span style="font-family:'Space Mono',monospace;font-size:12px">{{ pending.to_date }}</span></div>
+        <div class="oc-row"><span class="oc-lbl">Days</span><span><strong>{{ pending.num_days }}</strong></span></div>
+        <div class="oc-total">
+          <span style="font-weight:800">Total</span>
+          <span class="oc-total-val">₹{{ "{:,}".format(pending.total_cost|int) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function tab(el, nextId) { if (el.value.length === el.maxLength) document.getElementById(nextId)?.focus(); }
+function fmtExp(el) {
+  let v = el.value.replace(/\D/g,'');
+  if (v.length >= 2) v = v.slice(0,2) + '/' + v.slice(2);
+  el.value = v;
+}
+function pad4(s) { return (s || '').padEnd(4,'•').slice(0,4); }
+function sync() {
+  const n = [pad4(document.getElementById('g1').value),
+             pad4(document.getElementById('g2').value),
+             pad4(document.getElementById('g3').value),
+             pad4(document.getElementById('g4').value)].join('  ');
+  document.getElementById('vcdNum').textContent = n;
+  document.getElementById('vcdHolder').textContent = document.getElementById('holder').value.toUpperCase() || 'YOUR NAME';
+  document.getElementById('vcdExp').textContent    = document.getElementById('expiry').value || 'MM/YY';
+}
+function pay() {
+  document.getElementById('overlay').classList.add('on');
+  ['st1','st2','st3'].forEach((id,i) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      el.classList.add('done');
+      el.querySelector('.step-dot').textContent = '✓';
+    }, (i+1)*1000);
+  });
+  setTimeout(() => document.getElementById('payForm').submit(), 3800);
+}
+</script>
+{% endblock %}

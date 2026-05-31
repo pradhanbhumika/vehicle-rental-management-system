@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Bookings — RentWheels{% endblock %}
+
+{% block extra_css %}
+<style>
+.bk-hero {
+  background: linear-gradient(135deg, var(--navy), #1e3a8a);
+  padding: 34px 24px; border-bottom: 1px solid var(--border);
+}
+.bkh { max-width:1240px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; }
+.bkh h1 { font-size:26px; font-weight:900; color:#fff; letter-spacing:-0.4px; }
+.bkh p  { color:rgba(255,255,255,0.5); font-size:14px; margin-top:3px; }
+
+.stat-row {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 22px;
+}
+@media (max-width: 600px) { .stat-row { grid-template-columns: 1fr; } }
+.stat-tile {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 18px;
+  display: flex; align-items: center; gap: 13px; box-shadow: var(--shadow-sm);
+}
+.st-ic { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+.st-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+.st-val { font-size: 22px; font-weight: 900; letter-spacing: -0.4px; margin-top: 2px; }
+
+.search-bar {
+  display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.sb-wrap {
+  flex: 1; min-width: 200px;
+  display: flex; align-items: center; gap: 9px;
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 10px 14px; box-shadow: var(--shadow-sm);
+  transition: border-color 0.17s;
+}
+.sb-wrap:focus-within { border-color: var(--blue); }
+.sb-wrap i { color: var(--muted); }
+.sb-wrap input {
+  flex: 1; background: none; border: none; outline: none;
+  font-family: 'Nunito', sans-serif; font-size: 14px; color: var(--text);
+}
+.sb-wrap input::placeholder { color: var(--muted2); }
+
+.thumb { width: 48px; height: 36px; object-fit: cover; border-radius: 6px; display: block; }
+.mono  { font-family: 'Space Mono', monospace; font-size: 12px; }
+
+.del-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 13px; border-radius: 7px;
+  background: #fef2f2; border: 1px solid #fca5a5;
+  color: #dc2626; font-weight: 800; font-size: 13px;
+  text-decoration: none; transition: all 0.17s;
+}
+.del-btn:hover { background: #dc2626; color: #fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="bk-hero">
+  <div class="bkh">
+    <div>
+      <h1>All Bookings</h1>
+      <p>View and manage every rental booking</p>
+    </div>
+    <a href="/" class="btn btn-primary btn-sm">
+      <i class="fa fa-plus"></i> New Booking
+    </a>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="stat-row">
+    <div class="stat-tile">
+      <div class="st-ic" style="background:var(--blue-lt)">📋</div>
+      <div>
+        <div class="st-lbl">Total Bookings</div>
+        <div class="st-val">{{ bookings|length }}</div>
+      </div>
+    </div>
+    <div class="stat-tile">
+      <div class="st-ic" style="background:var(--teal-lt)">💰</div>
+      <div>
+        <div class="st-lbl">Revenue Shown</div>
+        <div class="st-val" style="color:var(--teal)">
+          Rs.{{ "{:,}".format(bookings|sum(attribute='total_cost')|int) if bookings else 0 }}
+        </div>
+      </div>
+    </div>
+    <div class="stat-tile">
+      <div class="st-ic" style="background:var(--amber-lt)">🔍</div>
+      <div>
+        <div class="st-lbl">Results</div>
+        <div class="st-val">{{ bookings|length }}</div>
+      </div>
+    </div>
+  </div>
+
+  <form method="GET" action="/bookings">
+    <div class="search-bar">
+      <div class="sb-wrap">
+        <i class="fa fa-magnifying-glass"></i>
+        <input type="text" name="search" value="{{ search }}"
+               placeholder="Search name, phone, vehicle..."/>
+        {% if search %}
+          <a href="/bookings" style="color:var(--muted);font-size:20px;line-height:1;text-decoration:none">x</a>
+        {% endif %}
+      </div>
+      <button type="submit" class="btn btn-ghost">Search</button>
+    </div>
+  </form>
+
+  <div class="tbl-wrap">
+    {% if bookings %}
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th></th>
+          <th>Customer</th>
+          <th>Phone</th>
+          <th>Vehicle</th>
+          <th>Dates</th>
+          <th>Days</th>
+          <th>Total</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for booking in bookings %}
+        <tr>
+          <td style="color:var(--muted);font-size:12px">
+            #{{ booking.id }}
+          </td>
+          <td>
+            <img class="thumb" src="{{ booking.image_url }}" alt="{{ booking.vehicle_name }}"/>
+          </td>
+          <td><strong>{{ booking.name }}</strong></td>
+          <td style="color:var(--muted);font-size:13px">{{ booking.phone }}</td>
+          <td>
+            <div style="font-weight:800;font-size:13px">{{ booking.vehicle_name }}</div>
+            <span class="badge {% if booking.vehicle_type == 'Bike' %}badge-blue{% else %}badge-teal{% endif %}">
+              {{ booking.vehicle_type }}
+            </span>
+          </td>
+          <td class="mono">
+            {{ booking.from_date }}<br/>
+            <span style="color:var(--muted)">to {{ booking.to_date }}</span>
+          </td>
+          <td style="text-align:center">
+            <span class="badge badge-amber">{{ booking.num_days }}d</span>
+          </td>
+          <td style="font-weight:900;font-size:15px;color:var(--blue)">
+            Rs.{{ "{:,}".format(booking.total_cost|int) }}
+          </td>
+          <td>
+            <a href="/delete/{{ booking.id }}"
+               class="del-btn"
+               onclick="return confirm('Delete booking #{{ booking.id }} for {{ booking.name }}? This cannot be undone.')">
+              <i class="fa fa-trash"></i> Delete
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">
+      <span class="icon">📭</span>
+      <h3>No bookings found</h3>
+      <p>
+        {% if search %}
+          No results for "{{ search }}".
+          <a href="/bookings" style="color:var(--blue)">Clear search</a>
+        {% else %}
+          <a href="/" style="color:var(--blue)">Make a booking</a> to see it here.
+        {% endif %}
+      </p>
+    </div>
+    {% endif %}
+
+  </div>
+
+</div>
+
+{% endblock %}
